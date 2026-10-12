@@ -1,0 +1,24 @@
+# Ad-hoc dev image: the existing Strix Halo ROCm toolbox, made compilable.
+#
+# The ROCm 10 toolbox ships the ROCm *runtime* (libamdhip64, hipBLASLt) and the
+# clang/hipcc binaries, but no HIP development headers, no host C/C++ toolchain
+# and no build system, so nothing can be compiled inside it. It is an image for
+# running prebuilt ROCm binaries.
+#
+# This adds exactly what is missing and nothing else:
+#   - the HIP headers and gfx1151 device bitcode (amdrocm-core-devel10.0)
+#   - gcc/g++ for the host side and for the HIP runtime headers' <cstdlib>
+#   - cmake/ninja/make as the build system
+# ROCm itself is untouched: the toolbox's own 10.0 install is what we compile and
+# run against.
+FROM docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0
+
+RUN dnf install -y --nodocs \
+        amdrocm-core-devel10.0 \
+        amdrocm-core-devel10.0-gfx1151 \
+        gcc-c++ gcc gdb cmake ninja-build make git which \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+ENV ORDERIT_DEV=1
+WORKDIR /src
